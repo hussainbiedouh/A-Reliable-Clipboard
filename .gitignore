@@ -49,3 +49,7 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+
+# Application
+*.db
+run.bat
