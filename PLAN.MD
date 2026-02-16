@@ -17,11 +17,12 @@ Build a robust, cross-platform clipboard manager that:
 
 ### 🏁 Stage 1: Project Initialization & Foundation
 **Goal**: Set up a professional Python project structure and CI/CD basics.
-- [ ] Initialize Git repository (Done)
-- [ ] Create `README.md` with project description.
-- [ ] Create `.gitignore` for Python.
-- [ ] Set up `pyproject.toml` and `requirements.txt` (dependencies: `pyperclip`, `watchdog`, `pytest`).
-- [ ] Create basic directory structure (`src/`, `tests/`, `docs/`).
+- [x] Initialize Git repository (Done)
+- [x] Create `README.md` with project description.
+- [x] Create `.gitignore` for Python.
+- [x] Set up `requirements.txt` (dependencies: `pyperclip`, `watchdog`, `pytest`).
+- [ ] Set up `pyproject.toml`.
+- [x] Create basic directory structure (`src/`, `tests/`, `docs/`).
 - [ ] **Deliverable**: A clean, installable project skeleton.
 
 ### 🧩 Stage 2: Core Clipboard Logic (The Engine)
