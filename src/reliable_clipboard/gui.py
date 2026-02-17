@@ -14,65 +14,6 @@ import pyperclip
 logger = logging.getLogger(__name__)
 
 
-class RoundedFrame(tk.Canvas):
-    """Custom canvas with round corners"""
-    def __init__(self, parent, radius=15, bg=None, **kwargs):
-        self.radius = radius
-        super().__init__(parent, bg=bg or parent.cget('bg'), highlightthickness=0, **kwargs)
-        self.bind("<Configure>", self._draw)
-    
-    def _draw(self, event=None):
-        self.delete("all")
-        w, h = self.winfo_width(), self.winfo_height()
-        if w < 2 or h < 2:
-            return
-        self.create_rounded_rectangle(0, 0, w, h, self.radius, fill=self.cget("bg"))
-
-
-class RoundedButton(tk.Canvas):
-    """Custom rounded button"""
-    def __init__(self, parent, text, command, bg="#6366f1", fg="white", radius=10, font=("Segoe UI", 10, "bold"), **kwargs):
-        super().__init__(parent, bg=parent.cget('bg'), highlightthickness=0, cursor="hand2", **kwargs)
-        self.command = command
-        self.bg = bg
-        self.fg = fg
-        self.radius = radius
-        self.font = font
-        self.text = text
-        self.width = 100
-        self.height = 36
-        
-        self.bind("<Button-1>", self._on_click)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
-        
-        self._draw()
-    
-    def _draw(self):
-        self.delete("all")
-        self.create_rounded_rectangle(2, 2, self.width-2, self.height-2, self.radius, fill=self.bg, outline="")
-        self.create_text(self.width//2, self.height//2, text=self.text, fill=self.fg, font=self.font)
-    
-    def create_rounded_rectangle(self, x1, y1, x2, y2, r, **kwargs):
-        self.create_oval(x1, y1, x1+2*r, y1+2*r, **kwargs)
-        self.create_oval(x2-2*r, y1, x2, y1+2*r, **kwargs)
-        self.create_oval(x1, y2-2*r, x1+2*r, y2, **kwargs)
-        self.create_oval(x2-2*r, y2-2*r, x2, y2, **kwargs)
-        self.create_rectangle(x1+r, y1, x2-r, y2, **kwargs)
-        self.create_rectangle(x1, y1+r, x2, y2-r, **kwargs)
-    
-    def _on_click(self, e):
-        self.command()
-    
-    def _on_enter(self, e):
-        self.bg = "#4f46e5"  # darker
-        self._draw()
-    
-    def _on_leave(self, e):
-        self.bg = "#6366f1"
-        self._draw()
-
-
 class ClipboardApp:
     def __init__(self, root: tk.Tk, db_path: str):
         self.root = root
@@ -81,7 +22,7 @@ class ClipboardApp:
         self.root.resizable(True, True)
         self.root.minsize(650, 480)
         
-        # Beautiful light theme
+        # Colors
         self.c = {
             'bg': '#f0f4f8',
             'white': '#ffffff',
@@ -92,7 +33,6 @@ class ClipboardApp:
             'danger_hover': '#dc2626',
             'text': '#1e293b',
             'text_light': '#64748b',
-            'border': '#e2e8f0',
             'hover': '#f1f5f9',
         }
         
@@ -119,8 +59,6 @@ class ClipboardApp:
 
         self.monitor = None
         self.monitoring = True
-        
-        # Tray
         self.tray = None
         self._setup_tray()
         
@@ -139,25 +77,25 @@ class ClipboardApp:
             d.rectangle((16, 16, 48, 48), fill='white')
             
             self.tray = pystray.Icon("rc", img, "📋 Clipboard", (
-                pystray.MenuItem("Show", lambda _: self._show_tray()),
-                pystray.MenuItem("Exit", lambda _: self._quit_tray())
+                pystray.MenuItem("Show", lambda _: self._show()),
+                pystray.MenuItem("Exit", lambda _: self._quit())
             ))
             threading.Thread(target=self.tray.run, daemon=True).start()
         except:
             pass
 
-    def _show_tray(self):
+    def _show(self):
         if self.tray:
             self.tray.visible = False
         self.root.deiconify()
 
-    def _quit_tray(self):
+    def _quit(self):
         if self.tray:
             self.tray.stop()
         self.root.quit()
 
     def _build_ui(self):
-        # Main container with padding
+        # Main container
         main = tk.Frame(self.root, bg=self.c['bg'])
         main.pack(fill=tk.BOTH, expand=True, padx=24, pady=24)
         
@@ -165,7 +103,7 @@ class ClipboardApp:
         header = tk.Frame(main, bg=self.c['bg'])
         header.pack(fill=tk.X, pady=(0, 20))
         
-        # Title area
+        # Title
         title_box = tk.Frame(header, bg=self.c['bg'])
         title_box.pack(side=tk.LEFT)
         
@@ -180,22 +118,24 @@ class ClipboardApp:
         tk.Label(title_text, text="Copy, paste, and manage your clipboard",
                 font=("Segoe UI", 11), bg=self.c['bg'], fg=self.c['text_light']).pack(anchor=tk.W)
         
-        # Status badge - rounded
-        self.status_bg = RoundedFrame(header, radius=20, bg=self.c['success'])
-        self.status_bg.pack(side=tk.RIGHT, padx=(0, 0), ipadx=16, ipady=8)
+        # Status badge
+        self.status_frame = tk.Frame(header, bg=self.c['success'], padx=16, pady=8)
+        self.status_frame.pack(side=tk.RIGHT)
+        self.status_frame.config(highlightthickness=0, relief=tk.FLAT)
         
-        self.status_inner = tk.Frame(self.status_bg, bg=self.c['success'])
-        self.status_inner.pack()
-        
-        tk.Label(self.status_inner, text="●  Active", font=("Segoe UI", 11, "bold"),
+        tk.Label(self.status_frame, text="●  Active", font=("Segoe UI", 11, "bold"),
                 fg="white", bg=self.c['success']).pack()
         
-        # ===== SEARCH - Rounded =====
-        search_rounded = RoundedFrame(main, radius=15, bg=self.c['white'])
-        search_rounded.pack(fill=tk.X, pady=(0, 20))
+        # Toggle button
+        self.toggle_btn = tk.Button(header, text="⏸️", font=("Segoe UI", 14),
+                                   command=self._toggle_monitoring, bg=self.c['white'],
+                                   fg=self.c['text'], relief=tk.FLAT, bd=0, padx=12, pady=8,
+                                   cursor="hand2", highlightthickness=0)
+        self.toggle_btn.pack(side=tk.RIGHT, padx=(12, 0))
         
-        search_box = tk.Frame(search_rounded, bg=self.c['white'])
-        search_box.pack(fill=tk.X, padx=16, pady=12)
+        # ===== SEARCH =====
+        search_box = tk.Frame(main, bg=self.c['white'], padx=16, pady=12)
+        search_box.pack(fill=tk.X, pady=(0, 20))
         
         tk.Label(search_box, text="🔍", font=("Segoe UI", 14), bg=self.c['white']).pack(side=tk.LEFT)
         
@@ -210,21 +150,9 @@ class ClipboardApp:
         self.search_entry.bind("<FocusIn>", lambda e: self._search_focus(True))
         self.search_entry.bind("<FocusOut>", lambda e: self._search_focus(False))
         
-        # Toggle button - rounded
-        self.toggle_btn = RoundedFrame(header, radius=8, bg=self.c['hover'])
-        self.toggle_btn.pack(side=tk.RIGHT, padx=(12, 0))
-        
-        self.toggle_text = tk.Label(self.toggle_btn, text="⏸️", font=("Segoe UI", 14),
-                                   bg=self.c['hover'], cursor="hand2")
-        self.toggle_text.pack(padx=10, pady=6)
-        self.toggle_text.bind("<Button-1>", lambda e: self._toggle_monitoring())
-        
-        # ===== LIST - Rounded =====
-        list_rounded = RoundedFrame(main, radius=15, bg=self.c['white'])
-        list_rounded.pack(fill=tk.BOTH, expand=True)
-        
-        list_box = tk.Frame(list_rounded, bg=self.c['white'])
-        list_box.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        # ===== LIST =====
+        list_box = tk.Frame(main, bg=self.c['white'])
+        list_box.pack(fill=tk.BOTH, expand=True)
         
         # Treeview
         self.tree = ttk.Treeview(list_box, columns=("id", "type", "content", "time"), 
@@ -256,14 +184,38 @@ class ClipboardApp:
         btns = tk.Frame(main, bg=self.c['bg'])
         btns.pack(fill=tk.X, pady=(20, 0))
         
-        # Rounded buttons
-        RoundedButton(btns, "📋  Copy", self._copy, bg=self.c['primary'], width=100, height=40).pack(side=tk.LEFT, padx=(0, 10))
-        RoundedButton(btns, "🗑️  Delete", self._delete, bg=self.c['hover'], fg=self.c['text'], width=100, height=40).pack(side=tk.LEFT, padx=(0, 10))
-        RoundedButton(btns, "🔄  Refresh", self._refresh, bg=self.c['hover'], fg=self.c['text'], width=110, height=40).pack(side=tk.LEFT, padx=(0, 10))
+        # Use standard tk buttons with better styling
+        self.btn_copy = tk.Button(btns, text="📋  Copy", command=self._copy,
+                       font=("Segoe UI", 11, "bold"), bg=self.c['primary'], fg="white",
+                       relief=tk.FLAT, bd=0, padx=20, pady=10, cursor="hand2",
+                       activebackground=self.c['primary_hover'], activeforeground="white",
+                       highlightthickness=0)
+        self.btn_copy.pack(side=tk.LEFT, padx=(0, 10))
         
-        tk.Frame(btns, bg=self.c['bg']).pack(side=tk.LEFT, expand=True)
+        self.btn_delete = tk.Button(btns, text="🗑️  Delete", command=self._delete,
+                       font=("Segoe UI", 11), bg=self.c['hover'], fg=self.c['text'],
+                       relief=tk.FLAT, bd=0, padx=20, pady=10, cursor="hand2",
+                       activebackground=self.c['border'], activeforeground=self.c['text'],
+                       highlightthickness=0)
+        self.btn_delete.pack(side=tk.LEFT, padx=(0, 10))
         
-        RoundedButton(btns, "🧹  Clear All", self._clear, bg=self.c['danger'], width=120, height=40).pack(side=tk.RIGHT)
+        self.btn_refresh = tk.Button(btns, text="🔄  Refresh", command=self._refresh,
+                       font=("Segoe UI", 11), bg=self.c['hover'], fg=self.c['text'],
+                       relief=tk.FLAT, bd=0, padx=20, pady=10, cursor="hand2",
+                       activebackground=self.c['border'], activeforeground=self.c['text'],
+                       highlightthickness=0)
+        self.btn_refresh.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Spacer - this keeps buttons visible
+        spacer = tk.Frame(btns, bg=self.c['bg'])
+        spacer.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        
+        self.btn_clear = tk.Button(btns, text="🧹  Clear All", command=self._clear,
+                       font=("Segoe UI", 11, "bold"), bg=self.c['danger'], fg="white",
+                       relief=tk.FLAT, bd=0, padx=20, pady=10, cursor="hand2",
+                       activebackground=self.c['danger_hover'], activeforeground="white",
+                       highlightthickness=0)
+        self.btn_clear.pack(side=tk.RIGHT)
         
         # Shortcuts
         self.root.bind("<Delete>", lambda e: self._delete())
@@ -352,10 +304,8 @@ class ClipboardApp:
         t.geometry(f"140x38+{x}+{y}")
         t.configure(bg=self.c['success'])
         
-        # Rounded toast
-        r = RoundedFrame(t, radius=10, bg=self.c['success'])
-        r.pack(fill=tk.BOTH, expand=True)
-        tk.Label(r, text=msg, font=("Segoe UI", 10, "bold"), bg=self.c['success'], fg="white").pack(expand=True)
+        tk.Label(t, text=msg, font=("Segoe UI", 10, "bold"), bg=self.c['success'], 
+                fg="white").pack(expand=True, pady=8)
         
         t.after(1200, t.destroy)
 
@@ -363,16 +313,14 @@ class ClipboardApp:
         self.monitoring = not self.monitoring
         if self.monitoring:
             self._start_monitor()
-            self.status_bg.configure(bg=self.c['success'])
-            self.status_inner.configure(bg=self.c['success'])
-            self.status_inner.winfo_children()[0].config(text="●  Active", bg=self.c['success'])
-            self.toggle_text.config(text="⏸️")
+            self.status_frame.config(bg=self.c['success'])
+            self.status_frame.winfo_children()[0].config(text="●  Active", bg=self.c['success'])
+            self.toggle_btn.config(text="⏸️")
         else:
             self._stop_monitor()
-            self.status_bg.configure(bg=self.c['text_light'])
-            self.status_inner.configure(bg=self.c['text_light'])
-            self.status_inner.winfo_children()[0].config(text="○  Paused", bg=self.c['text_light'])
-            self.toggle_text.config(text="▶️")
+            self.status_frame.config(bg=self.c['text_light'])
+            self.status_frame.winfo_children()[0].config(text="○  Paused", bg=self.c['text_light'])
+            self.toggle_btn.config(text="▶️")
 
     def _start_monitor(self):
         if self.monitor:
@@ -399,7 +347,7 @@ class ClipboardApp:
             self.root.withdraw()
             self.tray.visible = True
         else:
-            self._quit_tray()
+            self._quit()
 
 
 def start_gui(db_path: str):
