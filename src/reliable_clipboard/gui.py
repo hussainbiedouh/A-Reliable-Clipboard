@@ -34,6 +34,7 @@ class ClipboardApp:
             'text': '#1e293b',
             'text_light': '#64748b',
             'hover': '#f1f5f9',
+            'border': '#e2e8f0',
         }
         
         self.root.configure(bg=self.c['bg'])
