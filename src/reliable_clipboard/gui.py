@@ -170,15 +170,17 @@ class ClipboardApp:
         list_box = tk.Frame(main, bg=self.c['white'])
         list_box.pack(fill=tk.BOTH, expand=True)
         
-        # Configure treeview
-        style.configure("Tree", background=self.c['white'], foreground=self.c['text'],
+        # Configure treeview style FIRST
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("Treeview", background=self.c['white'], foreground=self.c['text'],
                       fieldbackground=self.c['white'], rowheight=48, font=("Segoe UI", 10))
-        style.configure("Tree.Heading", background=self.c['primary'], foreground="white",
+        style.configure("Treeview.Heading", background=self.c['primary'], foreground="white",
                       font=("Segoe UI", 10, "bold"))
-        style.map("Tree", background=[("selected", self.c['primary'])])
+        style.map("Treeview", background=[("selected", self.c['primary'])])
         
         self.tree = ttk.Treeview(list_box, columns=("id", "type", "content", "time"), 
-                                show="", style="Tree", selectmode="browse")
+                                show="", selectmode="browse")
         
         self.tree.column("id", width=50, anchor=tk.CENTER)
         self.tree.column("type", width=60, anchor=tk.CENTER)
