@@ -184,8 +184,8 @@ class ClipboardApp:
         style.map("Modern.Treeview", background=[("selected", self.colors['primary'])])
         
         # Buttons
-        btns = tk.Frame(main, bg=self.colors['bg'], pady=(15, 0))
-        btns.pack(fill=tk.X)
+        btns = tk.Frame(main, bg=self.colors['bg'])
+        btns.pack(fill=tk.X, pady=(15, 0))
         
         self._btn(btns, "📋 Copy", self._copy, self.colors['primary'])
         self._btn(btns, "🗑️ Delete", self._delete, self.colors['surface'])
