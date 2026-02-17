@@ -15,166 +15,184 @@ import pyperclip
 logger = logging.getLogger(__name__)
 
 
-class MaterialStyle:
-    """Material Design color palette and styling"""
-    # Primary colors
-    PRIMARY = "#6200EE"       # Deep Purple
-    PRIMARY_VARIANT = "#3700B3"
-    SECONDARY = "#03DAC6"     # Teal
-    SECONDARY_VARIANT = "#018786"
+class ModernColors:
+    """Modern color palette"""
+    # Gradients & Effects
+    BG_GRADIENT_START = "#1a1a2e"
+    BG_GRADIENT_END = "#16213e"
+    CARD_BG = "#0f3460"
+    CARD_HOVER = "#1a4a7a"
     
-    # Background & Surface
-    BACKGROUND = "#FFFFFF"
-    SURFACE = "#FFFFFF"
-    SURFACE_VARIANT = "#F5F5F5"
-    
-    # On colors
-    PRIMARY_ON = "#FFFFFF"
-    SECONDARY_ON = "#000000"
-    ON_BACKGROUND = "#000000"
-    ON_SURFACE = "#000000"
-    
-    # Status colors
-    ERROR = "#B00020"
-    SUCCESS = "#4CAF50"
-    WARNING = "#FF9800"
+    # Accent colors
+    PRIMARY = "#e94560"
+    PRIMARY_HOVER = "#ff6b6b"
+    SECONDARY = "#00d9ff"
+    SUCCESS = "#00e676"
+    WARNING = "#ffab00"
+    ERROR = "#ff5252"
     
     # Text colors
-    TEXT_PRIMARY = "#212121"
-    TEXT_SECONDARY = "#757575"
-    TEXT_DISABLED = "#BDBDBD"
+    TEXT_WHITE = "#ffffff"
+    TEXT_LIGHT = "#b8b8d1"
+    TEXT_MUTED = "#6c6c8a"
     
-    # Divider
-    DIVIDER = "#E0E0E0"
+    # UI Elements
+    TOGGLE_ON = "#00e676"
+    TOGGLE_OFF = "#4a4a6a"
+    BORDER = "#2a2a4a"
+    SHADOW = "#000000"
     
-    # Shadows
-    SHADOW_LOW = "0 1 3 rgba(0,0,0,0.12), 0 1 2 rgba(0,0,0,0.24)"
-    SHADOW_MED = "0 3 6 rgba(0,0,0,0.15), 0 2 6 rgba(0,0,0,0.20)"
-    SHADOW_HIGH = "0 10 20 rgba(0,0,0,0.19), 0 6 10 rgba(0,0,0,0.23)"
+    # Emojis with colors
+    EMOJI_COPY = "📋"
+    EMOJI_DELETE = "🗑️"
+    EMOJI_REFRESH = "🔄"
+    EMOJI_CLEAR = "🧹"
+    EMOJI_SEARCH = "🔍"
+    EMOJI_MONITOR_ON = "🟢"
+    EMOJI_MONITOR_OFF = "🔴"
+    EMOJI_IMAGE = "🖼️"
+    EMOJI_FILE = "📁"
+    EMOJI_TEXT = "📝"
+    EMOJI_CLIPBOARD = "📎"
+    EMOJI_CHECK = "✅"
+    EMOJI_WARNING = "⚠️"
+
+
+class RoundButton(tk.Canvas):
+    """Custom rounded button widget"""
+    def __init__(self, parent, text, command, bg=ModernColors.PRIMARY, hover=ModernColors.PRIMARY_HOVER, 
+                 fg=ModernColors.TEXT_WHITE, width=120, height=36, radius=18, font=("Segoe UI", 10, "bold")):
+        super().__init__(parent, width=width, height=height, bg=parent["bg"], highlightthickness=0)
+        
+        self.command = command
+        self.bg = bg
+        self.hover = hover
+        self.fg = fg
+        self.radius = radius
+        self.width = width
+        self.height = height
+        
+        self.btn_frame = tk.Frame(parent, bg=parent["bg"])
+        
+        self.btn = tk.Button(
+            self.btn_frame,
+            text=text,
+            command=command,
+            bg=bg,
+            fg=fg,
+            font=font,
+            relief=tk.FLAT,
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            activebackground=hover,
+            activeforeground=fg,
+            highlightthickness=0
+        )
+        
+        # Round corners using canvas
+        self.round_rectangle(0, 0, width, height, radius, fill=bg, outline="")
+        self.btn.place(x=0, y=0, width=width, height=height)
+        
+        # Hover effects
+        self.btn.bind("<Enter>", lambda e: self._on_hover(True))
+        self.btn.bind("<Leave>", lambda e: self._on_hover(False))
     
-    @staticmethod
-    def configure_styles(root):
-        """Configure ttk styles for Material Design"""
-        style = ttk.Style(root)
+    def round_rectangle(self, x1, y1, x2, y2, r, **kwargs):
+        """Create rounded rectangle"""
+        self.create_oval(x1, y1, x1 + 2*r, y1 + 2*r, **kwargs)
+        self.create_oval(x2-2*r, y1, x2, y1 + 2*r, **kwargs)
+        self.create_oval(x1, y2-2*r, x1 + 2*r, y2, **kwargs)
+        self.create_oval(x2-2*r, y2-2*r, x2, y2, **kwargs)
+        self.create_rectangle(x1+r, y1, x2-r, y2, **kwargs)
+        self.create_rectangle(x1, y1+r, x2, y2-r, **kwargs)
+    
+    def _on_hover(self, entering):
+        self.btn.config(bg=self.hover if entering else self.bg)
+
+
+class ModernToggle(tk.Canvas):
+    """Custom modern toggle switch"""
+    def __init__(self, parent, variable, on_command, off_command, bg_color=None):
+        super().__init__(parent, width=50, height=26, bg=parent["bg"], highlightthickness=0)
         
-        # Use a clean font
-        font_family = "Segoe UI"
+        self.variable = variable
+        self.on_command = on_command
+        self.off_command = off_command
+        self.bg_color = parent["bg"] if bg_color is None else bg_color
         
-        # Configure Treeview (List)
-        style.configure(
-            "Material.Treeview",
-            background=MaterialStyle.SURFACE,
-            foreground=MaterialStyle.TEXT_PRIMARY,
-            fieldbackground=MaterialStyle.SURFACE,
-            rowheight=40,
-            font=(font_family, 10)
-        )
+        self.toggle_on = ModernColors.TOGGLE_ON
+        self.toggle_off = ModernColors.TOGGLE_OFF
         
-        style.configure(
-            "Material.Treeview.Heading",
-            background=MaterialStyle.PRIMARY,
-            foreground=MaterialStyle.PRIMARY_ON,
-            font=(font_family, 10, "bold"),
-            relief="flat"
-        )
+        self.bind("<Button-1>", self._toggle)
         
-        style.map(
-            "Material.Treeview",
-            background=[("selected", MaterialStyle.PRIMARY)],
-            foreground=[("selected", MaterialStyle.PRIMARY_ON)]
-        )
+        self.draw_toggle()
         
-        style.map(
-            "Material.Treeview.Heading",
-            background=[("active", MaterialStyle.PRIMARY_VARIANT)]
-        )
+        # Update toggle when variable changes
+        self.variable.trace("w", self._on_variable_change)
+    
+    def draw_toggle(self):
+        """Draw the toggle switch"""
+        self.delete("all")
         
-        # Configure Buttons
-        style.configure(
-            "Material.TButton",
-            padding=(16, 8),
-            font=(font_family, 10, "bold"),
-            relief="flat",
-            background=MaterialStyle.PRIMARY,
-            foreground=MaterialStyle.PRIMARY_ON
-        )
+        is_on = self.variable.get()
         
-        style.map(
-            "Material.TButton",
-            background=[("active", MaterialStyle.PRIMARY_VARIANT), ("pressed", MaterialStyle.PRIMARY_VARIANT)],
-            relief=[("pressed", "flat")]
-        )
+        # Background track
+        color = self.toggle_on if is_on else self.toggle_off
+        self.round_rectangle(2, 2, 48, 24, 12, fill=color, outline="")
         
-        # Configure Secondary Button
-        style.configure(
-            "Material.Secondary.TButton",
-            padding=(16, 8),
-            font=(font_family, 10),
-            relief="flat",
-            background=MaterialStyle.SURFACE_VARIANT,
-            foreground=MaterialStyle.TEXT_PRIMARY
-        )
+        # Circle knob
+        knob_color = "#ffffff"
+        x = 32 if is_on else 8
+        self.create_oval(x-8, 2, x+8, 24, fill=knob_color, outline="")
         
-        style.map(
-            "Material.Secondary.TButton",
-            background=[("active", MaterialStyle.DIVIDER)]
-        )
+        # Glow effect when on
+        if is_on:
+            self.create_oval(10, 4, 40, 20, outline=ModernColors.TOGGLE_ON, width=2, stipple="gray50")
+    
+    def round_rectangle(self, x1, y1, x2, y2, r, **kwargs):
+        self.create_oval(x1, y1, x1 + 2*r, y1 + 2*r, **kwargs)
+        self.create_oval(x2-2*r, y1, x2, y1 + 2*r, **kwargs)
+        self.create_oval(x1, y2-2*r, x1 + 2*r, y2, **kwargs)
+        self.create_oval(x2-2*r, y2-2*r, x2, y2, **kwargs)
+        self.create_rectangle(x1+r, y1, x2-r, y2, **kwargs)
+        self.create_rectangle(x1, y1+r, x2, y2-r, **kwargs)
+    
+    def _toggle(self, event):
+        new_val = not self.variable.get()
+        self.variable.set(new_val)
         
-        # Configure Entry
-        style.configure(
-            "Material.TEntry",
-            padding=(12, 8),
-            fieldbackground=MaterialStyle.SURFACE_VARIANT,
-            foreground=MaterialStyle.TEXT_PRIMARY,
-            relief="flat",
-            borderwidth=0
-        )
+        if new_val:
+            if self.on_command:
+                self.on_command()
+        else:
+            if self.off_command:
+                self.off_command()
         
-        # Configure Frame
-        style.configure(
-            "Material.TFrame",
-            background=MaterialStyle.SURFACE
-        )
-        
-        # Configure Label
-        style.configure(
-            "Material.TLabel",
-            background=MaterialStyle.SURFACE,
-            foreground=MaterialStyle.TEXT_PRIMARY,
-            font=(font_family, 10)
-        )
-        
-        # Configure Checkbox
-        style.configure(
-            "Material.TCheckbutton",
-            background=MaterialStyle.SURFACE,
-            foreground=MaterialStyle.TEXT_PRIMARY,
-            font=(font_family, 10)
-        )
-        
-        return style
+        self.draw_toggle()
+    
+    def _on_variable_change(self, *args):
+        self.draw_toggle()
 
 
 class ClipboardApp:
     def __init__(self, root: tk.Tk, db_path: str):
         self.root = root
-        self.root.title("📋 Reliable Clipboard")
-        self.root.geometry("800x600")
+        self.root.title(f"{ModernColors.EMOJI_CLIPBOARD} Reliable Clipboard")
+        self.root.geometry("900x650")
         self.root.resizable(True, True)
-        self.root.minsize(600, 450)
+        self.root.minsize(700, 500)
         
-        # Material Design background
-        self.root.configure(bg=MaterialStyle.BACKGROUND)
+        # Set dark gradient background
+        self.root.configure(bg=ModernColors.BG_GRADIENT_START)
         
-        # Set custom icon if available (Windows-specific)
+        # Set window icon
         if platform.system() == 'Windows':
             try:
                 self.set_windows_icon()
             except Exception as e:
                 logger.warning(f"Failed to set window icon: {e}")
-        
-        # Configure Material styles
-        self.style = MaterialStyle.configure_styles(self.root)
         
         self.db_path = db_path
         try:
@@ -186,19 +204,20 @@ class ClipboardApp:
 
         self.monitor: Optional[ClipboardMonitor] = None
         self.monitoring_var = tk.BooleanVar(value=True)
+        self.monitoring_var.trace("w", self._on_monitor_toggle)
         
-        # Initialize system tray
+        # System tray
         self.tray_icon = None
         self.setup_system_tray()
         
         self._setup_ui()
         self.refresh_list()
-        
-        # Auto-refresh loop
         self.auto_refresh()
+        
+        # Start monitoring automatically
+        self.start_monitor()
 
     def set_windows_icon(self):
-        """Set custom window icon on Windows."""
         import sys
         from pathlib import Path
         
@@ -211,172 +230,179 @@ class ClipboardApp:
             self.root.iconbitmap(str(icon_path))
 
     def setup_system_tray(self):
-        """Setup system tray icon and menu."""
         try:
             import pystray
-            from PIL import Image
+            from PIL import Image, ImageDraw
             
-            # Load custom icon
             icon_path = self._get_icon_path()
-            
             if icon_path and icon_path.exists():
-                image = Image.open(str(icon_path))
+                image = Image.open(str(icon_path)).resize((64, 64))
             else:
-                from PIL import ImageDraw
-                image = Image.new('RGB', (64, 64), MaterialStyle.PRIMARY)
+                image = Image.new('RGB', (64, 64), ModernColors.PRIMARY)
                 draw = ImageDraw.Draw(image)
                 draw.rectangle((16, 16, 48, 48), fill='white')
             
             menu = (
-                pystray.MenuItem('📋 Show', self.show_window),
-                pystray.MenuItem('❌ Exit', self.quit_app)
+                pystray.MenuItem(f'{ModernColors.EMOJI_CLIPBOARD} Show', self.show_window),
+                pystray.MenuItem(f'{ModernColors.EMOJI_WARNING} Exit', self.quit_app)
             )
             
             self.tray_icon = pystray.Icon("clipboard", image, "Reliable Clipboard", menu)
             threading.Thread(target=self.tray_icon.run, daemon=True).start()
-            
-        except ImportError:
-            logger.warning("pystray not available")
         except Exception as e:
-            logger.error(f"Failed to setup system tray: {e}")
+            logger.warning(f"System tray not available: {e}")
 
     def _get_icon_path(self):
-        """Get the path to the application icon."""
         import sys
         from pathlib import Path
-        
-        if getattr(sys, 'frozen', False):
-            base_path = Path(sys._MEIPASS)
-        else:
-            base_path = Path(__file__).parent
-            
+        base_path = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).parent
         return base_path / 'assets' / 'clipboard.png'
 
     def show_window(self):
-        """Show the main window from system tray."""
-        self.tray_icon.visible = False
+        if self.tray_icon:
+            self.tray_icon.visible = False
         self.root.deiconify()
 
     def quit_app(self):
-        """Quit the application from system tray."""
         if self.tray_icon:
             self.tray_icon.stop()
         self.root.quit()
 
     def _setup_ui(self):
-        """Setup the Material Design UI"""
+        """Setup modern dark theme UI"""
         
-        # Main container with padding
-        main_container = tk.Frame(self.root, bg=MaterialStyle.BACKGROUND)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=16, pady=16)
+        # Main container with gradient
+        main_container = tk.Frame(self.root, bg=ModernColors.BG_GRADIENT_START)
+        main_container.pack(fill=tk.BOTH, expand=True)
         
-        # ===== HEADER SECTION =====
-        header_frame = tk.Frame(main_container, bg=MaterialStyle.BACKGROUND)
-        header_frame.pack(fill=tk.X, pady=(0, 16))
+        # ===== HEADER =====
+        header = tk.Frame(main_container, bg=ModernColors.BG_GRADIENT_START)
+        header.pack(fill=tk.X, padx=24, pady=(20, 0))
         
-        # App Title
-        title_label = tk.Label(
-            header_frame,
-            text="📋 Reliable Clipboard",
-            font=("Segoe UI", 20, "bold"),
-            fg=MaterialStyle.TEXT_PRIMARY,
-            bg=MaterialStyle.BACKGROUND
+        # Logo/Title
+        title_frame = tk.Frame(header, bg=ModernColors.BG_GRADIENT_START)
+        title_frame.pack(side=tk.LEFT)
+        
+        # App icon
+        icon_label = tk.Label(
+            title_frame,
+            text=ModernColors.EMOJI_CLIPBOARD,
+            font=("Segoe UI", 28),
+            bg=ModernColors.BG_GRADIENT_START
         )
-        title_label.pack(side=tk.LEFT)
+        icon_label.pack(side=tk.LEFT, padx=(0, 12))
         
-        # Monitor Status Indicator
-        self.monitor_status = tk.Label(
-            header_frame,
-            text="●",
-            font=("Segoe UI", 12),
-            fg=MaterialStyle.SUCCESS,
-            bg=MaterialStyle.BACKGROUND
+        # Title
+        title = tk.Label(
+            title_frame,
+            text="Reliable Clipboard",
+            font=("Segoe UI", 22, "bold"),
+            fg=ModernColors.TEXT_WHITE,
+            bg=ModernColors.BG_GRADIENT_START
         )
-        self.monitor_status.pack(side=tk.RIGHT, padx=(0, 8))
+        title.pack(side=tk.LEFT)
         
-        self.monitor_label = tk.Label(
-            header_frame,
-            text="Monitoring",
-            font=("Segoe UI", 10),
-            fg=MaterialStyle.TEXT_SECONDARY,
-            bg=MaterialStyle.BACKGROUND
-        )
-        self.monitor_label.pack(side=tk.RIGHT)
+        # Monitor toggle
+        toggle_frame = tk.Frame(header, bg=ModernColors.BG_GRADIENT_START)
+        toggle_frame.pack(side=tk.RIGHT)
         
-        # ===== SEARCH SECTION =====
-        search_frame = tk.Frame(main_container, bg=MaterialStyle.SURFACE_VARIANT, padx=12, pady=12)
-        search_frame.pack(fill=tk.X, pady=(0, 16))
-        
-        # Search icon
-        search_icon = tk.Label(
-            search_frame,
-            text="🔍",
+        # Monitor status emoji
+        self.monitor_emoji = tk.Label(
+            toggle_frame,
+            text=ModernColors.EMOJI_MONITOR_ON,
             font=("Segoe UI", 14),
-            bg=MaterialStyle.SURFACE_VARIANT
+            bg=ModernColors.BG_GRADIENT_START
         )
-        search_icon.pack(side=tk.LEFT, padx=(0, 8))
+        self.monitor_emoji.pack(side=tk.LEFT, padx=(0, 8))
+        
+        # Custom toggle switch
+        self.toggle = ModernToggle(
+            toggle_frame, 
+            self.monitoring_var,
+            on_command=self.start_monitor,
+            off_command=self.stop_monitor
+        )
+        self.toggle.pack(side=tk.LEFT)
+        
+        # ===== SEARCH BAR =====
+        search_container = tk.Frame(main_container, bg=ModernColors.CARD_BG, padx=2, pady=2)
+        search_container.pack(fill=tk.X, padx=24, pady=(20, 16))
+        
+        # Inner search frame
+        search_inner = tk.Frame(search_container, bg=ModernColors.CARD_BG, padx=16, pady=12)
+        search_inner.pack(fill=tk.X)
+        
+        # Search emoji
+        search_emoji = tk.Label(
+            search_inner,
+            text=ModernColors.EMOJI_SEARCH,
+            font=("Segoe UI", 16),
+            bg=ModernColors.CARD_BG
+        )
+        search_emoji.pack(side=tk.LEFT, padx=(0, 12))
         
         # Search entry
         self.search_var = tk.StringVar()
-        self.search_var.trace("w", lambda name, index, mode: self.search_clips())
+        self.search_var.trace("w", lambda *args: self.search_clips())
         
         self.search_entry = tk.Entry(
-            search_frame,
+            search_inner,
             textvariable=self.search_var,
             font=("Segoe UI", 12),
-            bg=MaterialStyle.SURFACE_VARIANT,
-            fg=MaterialStyle.TEXT_PRIMARY,
+            bg=ModernColors.CARD_HOVER,
+            fg=ModernColors.TEXT_WHITE,
             relief=tk.FLAT,
             bd=0,
-            insertbackground=MaterialStyle.PRIMARY
+            insertbackground=ModernColors.SECONDARY
         )
         self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        # Placeholder text
-        self.search_entry.insert(0, "Search clipboard history...")
-        self.search_entry.bind("<FocusIn>", lambda args: self._on_search_focus_in())
-        self.search_entry.bind("<FocusOut>", lambda args: self._on_search_focus_out())
+        # Placeholder
+        self.search_entry.insert(0, "Search your clipboard history...")
+        self.search_entry.bind("<FocusIn>", lambda e: self._on_search_in())
+        self.search_entry.bind("<FocusOut>", lambda e: self._on_search_out())
         
-        # Monitor toggle switch
-        self.monitor_check = tk.Checkbutton(
-            search_frame,
-            text="📡",
-            variable=self.monitoring_var,
-            command=self.toggle_monitor,
-            font=("Segoe UI", 14),
-            bg=MaterialStyle.SURFACE_VARIANT,
-            fg=MaterialStyle.TEXT_PRIMARY,
-            activebackground=MaterialStyle.SURFACE_VARIANT,
-            selectcolor=MaterialStyle.SURFACE_VARIANT
+        # Results count
+        self.results_label = tk.Label(
+            search_inner,
+            text="",
+            font=("Segoe UI", 10),
+            fg=ModernColors.TEXT_MUTED,
+            bg=ModernColors.CARD_BG
         )
-        self.monitor_check.pack(side=tk.RIGHT, padx=(12, 0))
+        self.results_label.pack(side=tk.RIGHT, padx=(12, 0))
         
-        # ===== CONTENT SECTION (Card) =====
-        content_card = tk.Frame(main_container, bg=MaterialStyle.SURFACE, padx=1, pady=1)
-        content_card.pack(fill=tk.BOTH, expand=True)
+        # ===== CLIPBOARD LIST (Card) =====
+        list_container = tk.Frame(main_container, bg=ModernColors.CARD_BG, padx=2, pady=2)
+        list_container.pack(fill=tk.BOTH, expand=True, padx=24, pady=(0, 16))
         
-        # Treeview for clips
-        columns = ("id", "type", "content")
+        # List inner frame
+        list_inner = tk.Frame(list_container, bg=ModernColors.CARD_BG)
+        list_inner.pack(fill=tk.BOTH, expand=True)
+        
+        # Treeview
+        columns = ("id", "type", "content", "time")
         self.tree = ttk.Treeview(
-            content_card, 
-            columns=columns, 
-            show="headings", 
+            list_inner,
+            columns=columns,
+            show="headings",
             selectmode="browse",
-            style="Material.Treeview"
+            style="Modern.Treeview"
         )
         
-        # Configure headings
+        # Configure columns
         self.tree.heading("id", text="#", anchor=tk.CENTER)
         self.tree.heading("type", text="Type", anchor=tk.CENTER)
         self.tree.heading("content", text="Content", anchor=tk.W)
+        self.tree.heading("time", text="Time", anchor=tk.CENTER)
         
-        # Configure columns
         self.tree.column("id", width=50, stretch=False, anchor=tk.CENTER)
         self.tree.column("type", width=80, stretch=False, anchor=tk.CENTER)
         self.tree.column("content", stretch=True, anchor=tk.W)
+        self.tree.column("time", width=100, stretch=False, anchor=tk.CENTER)
         
         # Scrollbar
-        scrollbar = ttk.Scrollbar(content_card, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(list_inner, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -385,75 +411,47 @@ class ClipboardApp:
         # Double-click to copy
         self.tree.bind("<Double-Button-1>", lambda e: self.copy_selected())
         
-        # ===== ACTION BAR =====
-        action_frame = tk.Frame(main_container, bg=MaterialStyle.BACKGROUND)
-        action_frame.pack(fill=tk.X, pady=(16, 0))
-        
-        # Action buttons
-        btn_copy = tk.Button(
-            action_frame,
-            text="📋 Copy",
-            command=self.copy_selected,
+        # Configure treeview style
+        style = ttk.Style()
+        style.configure(
+            "Modern.Treeview",
+            background=ModernColors.CARD_BG,
+            foreground=ModernColors.TEXT_WHITE,
+            fieldbackground=ModernColors.CARD_BG,
+            rowheight=44,
+            font=("Segoe UI", 10)
+        )
+        style.configure(
+            "Modern.Treeview.Heading",
+            background=ModernColors.PRIMARY,
+            foreground=ModernColors.TEXT_WHITE,
             font=("Segoe UI", 10, "bold"),
-            bg=MaterialStyle.PRIMARY,
-            fg=MaterialStyle.PRIMARY_ON,
-            relief=tk.FLAT,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            activebackground=MaterialStyle.PRIMARY_VARIANT,
-            activeforeground=MaterialStyle.PRIMARY_ON
+            relief=tk.FLAT
         )
-        btn_copy.pack(side=tk.LEFT, padx=(0, 8))
+        style.map(
+            "Modern.Treeview",
+            background=[("selected", ModernColors.PRIMARY)],
+            foreground=[("selected", ModernColors.TEXT_WHITE)]
+        )
         
-        btn_delete = tk.Button(
-            action_frame,
-            text="🗑️ Delete",
-            command=self.delete_selected,
-            font=("Segoe UI", 10),
-            bg=MaterialStyle.SURFACE_VARIANT,
-            fg=MaterialStyle.TEXT_PRIMARY,
-            relief=tk.FLAT,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            activebackground=MaterialStyle.DIVIDER
-        )
-        btn_delete.pack(side=tk.LEFT, padx=(0, 8))
+        # ===== ACTION BUTTONS =====
+        actions = tk.Frame(main_container, bg=ModernColors.BG_GRADIENT_START)
+        actions.pack(fill=tk.X, padx=24, pady=(0, 20))
         
-        btn_refresh = tk.Button(
-            action_frame,
-            text="🔄 Refresh",
-            command=self.refresh_list,
-            font=("Segoe UI", 10),
-            bg=MaterialStyle.SURFACE_VARIANT,
-            fg=MaterialStyle.TEXT_PRIMARY,
-            relief=tk.FLAT,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            activebackground=MaterialStyle.DIVIDER
-        )
-        btn_refresh.pack(side=tk.LEFT, padx=(0, 8))
+        # Button container with card look
+        btn_container = tk.Frame(actions, bg=ModernColors.CARD_BG, padx=16, pady=12)
+        btn_container.pack(fill=tk.X)
+        
+        # Create modern buttons
+        self.create_modern_button(btn_container, f"{ModernColors.EMOJI_COPY} Copy", self.copy_selected, ModernColors.PRIMARY)
+        self.create_modern_button(btn_container, f"{ModernColors.EMOJI_DELETE} Delete", self.delete_selected, ModernColors.CARD_HOVER)
+        self.create_modern_button(btn_container, f"{ModernColors.EMOJI_REFRESH} Refresh", self.refresh_list, ModernColors.CARD_HOVER)
         
         # Spacer
-        tk.Frame(action_frame, bg=MaterialStyle.BACKGROUND).pack(side=tk.LEFT, expand=True, fill=tk.X)
+        tk.Frame(btn_container, bg=ModernColors.CARD_BG).pack(side=tk.LEFT, expand=True, fill=tk.X)
         
-        btn_clear = tk.Button(
-            action_frame,
-            text="🧹 Clear All",
-            command=self.clear_all,
-            font=("Segoe UI", 10),
-            bg=MaterialStyle.ERROR,
-            fg="white",
-            relief=tk.FLAT,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            activebackground="#900020",
-            activeforeground="white"
-        )
-        btn_clear.pack(side=tk.RIGHT)
+        # Clear all button (danger)
+        self.create_modern_button(btn_container, f"{ModernColors.EMOJI_CLEAR} Clear All", self.clear_all, ModernColors.ERROR)
         
         # Keyboard shortcuts
         self.root.bind('<F5>', lambda e: self.refresh_list())
@@ -461,63 +459,89 @@ class ClipboardApp:
         self.root.bind('<Return>', lambda e: self.copy_selected())
         self.root.bind('<Escape>', lambda e: self.search_var.set(''))
         
-        # Handle window closing
+        # Close handler
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-    
-    def _on_search_focus_in(self):
-        """Handle search entry focus in"""
-        if self.search_entry.get() == "Search clipboard history...":
-            self.search_entry.delete(0, tk.END)
-            self.search_entry.configure(fg=MaterialStyle.TEXT_PRIMARY)
-    
-    def _on_search_focus_out(self):
-        """Handle search entry focus out"""
-        if self.search_entry.get() == "":
-            self.search_entry.insert(0, "Search clipboard history...")
-            self.search_entry.configure(fg=MaterialStyle.TEXT_DISABLED)
 
-    def format_timestamp(self, ts: float) -> str:
-        return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
+    def create_modern_button(self, parent, text, command, bg_color):
+        """Create a modern styled button"""
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=bg_color,
+            fg=ModernColors.TEXT_WHITE,
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            padx=16,
+            pady=8,
+            cursor="hand2",
+            activebackground=ModernColors.PRIMARY_HOVER if bg_color == ModernColors.PRIMARY else ModernColors.BORDER,
+            activeforeground=ModernColors.TEXT_WHITE,
+            highlightthickness=0
+        )
+        btn.pack(side=tk.LEFT, padx=(0, 8))
+        
+        # Bind hover
+        btn.bind("<Enter>", lambda e: e.widget.config(bg=ModernColors.PRIMARY_HOVER if bg_color == ModernColors.PRIMARY else ModernColors.BORDER))
+        btn.bind("<Leave>", lambda e: e.widget.config(bg=bg_color))
+
+    def _on_search_in(self):
+        if self.search_entry.get() == "Search your clipboard history...":
+            self.search_entry.delete(0, tk.END)
+            self.search_entry.config(fg=ModernColors.TEXT_WHITE)
+
+    def _on_search_out(self):
+        if self.search_entry.get() == "":
+            self.search_entry.insert(0, "Search your clipboard history...")
+            self.search_entry.config(fg=ModernColors.TEXT_MUTED)
+
+    def _on_monitor_toggle(self, *args):
+        if self.monitoring_var.get():
+            self.monitor_emoji.config(text=ModernColors.EMOJI_MONITOR_ON)
+        else:
+            self.monitor_emoji.config(text=ModernColors.EMOJI_MONITOR_OFF)
 
     def refresh_list(self):
-        """Fetch clips from DB and update the list."""
         try:
             query = self.search_var.get()
-            if query and query != "Search clipboard history...":
+            if query and query != "Search your clipboard history...":
                 clips = self.storage.search_clips(query)
             else:
-                clips = self.storage.get_recent_clips(limit=50)
+                clips = self.storage.get_recent_clips(limit=100)
             
-            # Clear current items
+            # Update results count
+            self.results_label.config(text=f"{len(clips)} items")
+            
+            # Clear and repopulate
             for item in self.tree.get_children():
                 self.tree.delete(item)
-                
+            
             for clip in clips:
                 clip_type = clip.get('clip_type', 'text')
                 content = clip['content']
+                timestamp = datetime.fromtimestamp(clip['timestamp']).strftime('%H:%M')
                 
+                # Format based on type
                 if clip_type == 'image':
-                    display_type = "🖼️ Image"
-                    display_content = "Image clipboard data"
+                    emoji = ModernColors.EMOJI_IMAGE
+                    display = "Image data"
                 elif clip_type == 'file':
+                    emoji = ModernColors.EMOJI_FILE
                     files = content.split('\n')
-                    display_type = "📁 Files"
-                    display_content = f"{len(files)} file{'s' if len(files) > 1 else ''}: {files[0]}"
-                    if len(display_content) > 50:
-                        display_content = display_content[:47] + "..."
+                    display = f"{len(files)} file(s)"
                 else:
-                    display_type = "📝 Text"
-                    display_content = content.replace('\n', ' ')
-                    if len(display_content) > 60:
-                        display_content = display_content[:57] + "..."
+                    emoji = ModernColors.EMOJI_TEXT
+                    display = content.replace('\n', ' ')
+                    if len(display) > 50:
+                        display = display[:47] + "..."
                 
-                # Insert with tag for alternating rows
-                tag = "even" if clip['id'] % 2 == 0 else "odd"
                 self.tree.insert("", tk.END, values=(
                     clip['id'],
-                    display_type,
-                    display_content
-                ), tags=(tag,))
+                    emoji,
+                    display,
+                    timestamp
+                ))
                 
         except Exception as e:
             logger.error(f"Error refreshing list: {e}")
@@ -526,72 +550,62 @@ class ClipboardApp:
         self.refresh_list()
 
     def auto_refresh(self):
-        """Periodically refresh the list."""
         self.refresh_list()
-        self.root.after(2000, self.auto_refresh)
+        self.root.after(1500, self.auto_refresh)
 
     def copy_selected(self):
-        selected_item = self.tree.selection()
-        if not selected_item:
+        selected = self.tree.selection()
+        if not selected:
             return
-            
-        item = self.tree.item(selected_item)
+        
+        item = self.tree.item(selected)
         clip_id = item['values'][0]
-        clip_type = item['values'][1]
-        content = item['values'][2]
         
         # Get full content from storage
         clips = self.storage.get_recent_clips(limit=1000)
         full_content = next((c['content'] for c in clips if c['id'] == clip_id), "")
         
         try:
-            if "Text" in clip_type:
-                pyperclip.copy(full_content)
-                self._show_toast("✅ Copied to clipboard!")
-            elif "Image" in clip_type:
-                messagebox.showinfo("🖼️ Image", "Image preview and paste coming soon!")
-            elif "File" in clip_type:
-                messagebox.showinfo("📁 Files", f"File path(s):\n{full_content}")
+            pyperclip.copy(full_content)
+            self._show_toast(f"{ModernColors.EMOJI_CHECK} Copied!")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to copy: {e}")
 
     def _show_toast(self, message):
-        """Show a temporary toast message"""
         toast = tk.Toplevel(self.root)
         toast.overrideredirect(True)
         toast.attributes("-topmost", True)
         
-        # Position at bottom center
         ws = self.root.winfo_screenwidth()
         hs = self.root.winfo_screenheight()
-        x = ws // 2 - 100
-        y = hs - 100
-        toast.geometry(f"200x40+{x}+{y}")
+        x = ws // 2 - 80
+        y = hs - 120
+        toast.geometry(f"160x40+{x}+{y}")
         
-        toast.configure(bg=MaterialStyle.TEXT_PRIMARY)
+        toast.configure(bg=ModernColors.SUCCESS)
         
         label = tk.Label(
             toast,
             text=message,
-            font=("Segoe UI", 10, "bold"),
-            bg=MaterialStyle.TEXT_PRIMARY,
+            font=("Segoe UI", 11, "bold"),
+            bg=ModernColors.SUCCESS,
             fg="white",
             padx=20,
-            pady=10
+            pady=8
         )
         label.pack(fill=tk.BOTH, expand=True)
         
-        toast.after(1500, toast.destroy)
+        toast.after(1200, toast.destroy)
 
     def delete_selected(self):
-        selected_item = self.tree.selection()
-        if not selected_item:
+        selected = self.tree.selection()
+        if not selected:
             return
-            
-        item = self.tree.item(selected_item)
+        
+        item = self.tree.item(selected)
         clip_id = item['values'][0]
         
-        if messagebox.askyesno("Delete Clip", "Are you sure you want to delete this clip?"):
+        if messagebox.askyesno("🗑️ Delete", "Delete this clip?"):
             try:
                 self.storage.delete_clip(clip_id)
                 self.refresh_list()
@@ -599,27 +613,18 @@ class ClipboardApp:
                 messagebox.showerror("Error", f"Failed to delete: {e}")
 
     def clear_all(self):
-        if messagebox.askyesno("Clear History", "Are you sure you want to clear ALL clipboard history?"):
+        if messagebox.askyesno("🧹 Clear All", "Clear ALL clipboard history? This cannot be undone!"):
             try:
                 self.storage.clear_history()
                 self.refresh_list()
+                self._show_toast(f"{ModernColors.EMOJI_CHECK} Cleared!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to clear: {e}")
-
-    def toggle_monitor(self):
-        if self.monitoring_var.get():
-            self.start_monitor()
-            self.monitor_status.config(text="●", fg=MaterialStyle.SUCCESS)
-            self.monitor_label.config(text="Monitoring")
-        else:
-            self.stop_monitor()
-            self.monitor_status.config(text="○", fg=MaterialStyle.TEXT_DISABLED)
-            self.monitor_label.config(text="Paused")
 
     def start_monitor(self):
         if self.monitor:
             return
-            
+        
         history = ClipHistory(storage_manager=self.storage)
         
         def on_change(content, clip_type):
@@ -627,9 +632,9 @@ class ClipboardApp:
             try:
                 history.add_clip(content, clip_type)
             except Exception as e:
-                logger.error(f"Error adding clip: {e}")
-
-        self.monitor = ClipboardMonitor(on_change)
+                logger.error(f"Monitor error: {e}")
+        
+        self.monitor = ClipboardMonitor(on_change=on_change, check_interval=0.3)
         self.monitor.start()
 
     def stop_monitor(self):
@@ -638,14 +643,12 @@ class ClipboardApp:
             self.monitor = None
 
     def on_close(self):
-        """Handle window closing - minimize to tray"""
         if self.tray_icon:
             self.minimize_to_tray()
         else:
             self.quit_app()
 
     def minimize_to_tray(self):
-        """Minimize to system tray"""
         self.root.withdraw()
         if self.tray_icon:
             self.tray_icon.visible = True
