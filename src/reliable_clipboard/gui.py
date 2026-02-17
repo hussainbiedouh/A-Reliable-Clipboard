@@ -96,13 +96,18 @@ class ClipboardApp:
         self.root.quit()
 
     def _build_ui(self):
-        # Main container
+        # Main container - use grid for better resize handling
         main = tk.Frame(self.root, bg=self.c['bg'])
         main.pack(fill=tk.BOTH, expand=True, padx=24, pady=24)
+        main.grid_rowconfigure(0, weight=0)  # header - fixed
+        main.grid_rowconfigure(1, weight=0)  # search - fixed
+        main.grid_rowconfigure(2, weight=1)  # list - expand
+        main.grid_rowconfigure(3, weight=0)  # buttons - fixed
+        main.grid_columnconfigure(0, weight=1)
         
         # ===== HEADER =====
         header = tk.Frame(main, bg=self.c['bg'])
-        header.pack(fill=tk.X, pady=(0, 20))
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 20))
         
         # Title
         title_box = tk.Frame(header, bg=self.c['bg'])
@@ -136,7 +141,7 @@ class ClipboardApp:
         
         # ===== SEARCH =====
         search_box = tk.Frame(main, bg=self.c['white'], padx=16, pady=12)
-        search_box.pack(fill=tk.X, pady=(0, 20))
+        search_box.grid(row=1, column=0, sticky="ew", pady=(0, 20))
         
         tk.Label(search_box, text="🔍", font=("Segoe UI", 14), bg=self.c['white']).pack(side=tk.LEFT)
         
@@ -153,7 +158,7 @@ class ClipboardApp:
         
         # ===== LIST =====
         list_box = tk.Frame(main, bg=self.c['white'])
-        list_box.pack(fill=tk.BOTH, expand=True)
+        list_box.grid(row=2, column=0, sticky="nsew")
         
         # Treeview
         self.tree = ttk.Treeview(list_box, columns=("id", "type", "content", "time"), 
@@ -183,7 +188,7 @@ class ClipboardApp:
         
         # ===== BUTTONS =====
         btns = tk.Frame(main, bg=self.c['bg'])
-        btns.pack(fill=tk.X, pady=(20, 0))
+        btns.grid(row=3, column=0, sticky="ew", pady=(20, 0))
         
         # Use standard tk buttons with better styling
         self.btn_copy = tk.Button(btns, text="📋  Copy", command=self._copy,
